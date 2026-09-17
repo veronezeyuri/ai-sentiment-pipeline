@@ -9,7 +9,7 @@ The system is designed to decouple data ingestion from data processing, ensuring
 ```mermaid
 graph LR
 A[Client/Webhook] -->|POST JSON| B(n8n Orchestrator)
-B -->|Prompt + Payload| C{Groq API / Llama 3}
+B -->|Prompt + Payload| C{Groq API / qwen/qwen3.8-27b}
 C -->|Structured JSON| B
 B -->|INSERT| D[(MySQL)]
 B -->|INCR + EXPIRE| E[(Redis)]
