@@ -1,0 +1,164 @@
+{
+  "name": "restaurante_pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO avaliacoes (nome_restaurante, nota, sentimento) \nVALUES ('Pizzaria Teste', 1, '{{ JSON.parse($json.text).sentimento }}');",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        0
+      ],
+      "id": "b40167f7-6624-403c-b76a-f7bea8311e04",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "mySql": {
+          "id": "VDWutZjS3sryDNY5",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "avaliacoes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "707547bf-e736-4ac2-b861-fa67ce9c2644",
+      "name": "Webhook",
+      "webhookId": "e716f402-0e9c-4685-bd20-855d95d058dc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Atue como um especialista em análise de qualidade de restaurantes.\nEu vou te enviar o texto de uma avaliação de um cliente. Você deve analisar o texto e me retornar ESTRITAMENTE um JSON válido, sem nenhum texto adicional antes ou depois.\n\nUse exatamente esta estrutura:\n{\n\"sentimento\": \"Escolha OBRIGATORIAMENTE apenas entre: 'Positivo', 'Negativo' ou 'Neutro'.\",\n\"palavra_chave\": \"Retorne apenas uma única palavra em letras minúsculas que resuma o principal motivo da avaliação.\"\n}\n\nAvaliação do cliente: {{ $json.body.avaliacao }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        640,
+        0
+      ],
+      "id": "c5d1fa18-01ab-4ac2-8869-35eb827a074d",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3.8-27b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        640,
+        96
+      ],
+      "id": "cc8490aa-97c0-4137-8a82-18177c8dcbe8",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "sMTHU0xX7bA5rAc2",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "incr",
+        "key": "=tendencia:{{ $now.toFormat('yyyy-MM-dd') }}:{{JSON.parse($json.text).palavra_chave}}",
+        "expire": true,
+        "ttl": 86400
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        960,
+        176
+      ],
+      "id": "feb8513c-9c25-4467-9641-8e0374e399cb",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "D33mwKH3NayvWvlq",
+          "name": "Redis account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1d08c6f0-9319-43e7-a345-a33777b4a265",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "393f48063355f9205909c68dc8e0ce4b366596b8ad232872e65e27cf89b15e19"
+  },
+  "nodeGroups": [],
+  "id": "aFWnrh2bqWujJHna",
+  "tags": []
+}
