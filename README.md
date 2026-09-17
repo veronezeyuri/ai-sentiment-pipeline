@@ -6,9 +6,11 @@ An event-driven data pipeline built to capture, analyze, and store customer revi
 
 The system is designed to decouple data ingestion from data processing, ensuring high availability and preventing memory leaks or database locks during traffic spikes.
 
+```mermaid
 graph LR
 A[Client/Webhook] -->|POST JSON| B(n8n Orchestrator)
 B -->|Prompt + Payload| C{Groq API / Llama 3}
 C -->|Structured JSON| B
 B -->|INSERT| D[(MySQL)]
 B -->|INCR + EXPIRE| E[(Redis)]
+```
